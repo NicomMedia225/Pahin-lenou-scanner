@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color" content="#07162f">
+
+  <title>Pahin Lénou — Mon ticket</title>
+
+  <!-- Générateur QR Code -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+
+      background:
+        radial-gradient(
+          circle at 50% 0%,
+          #173968 0,
+          transparent 42%
+        ),
+        linear-gradient(
+          160deg,
+          #07162f,
+          #020916
+        );
+
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 430px;
+      background: rgba(13, 31, 61, 0.95);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 24px;
+      padding: 25px 20px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    }
+
+    .brand {
+      color: #f0c85a;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    .subtitle {
+      color: #b9c7dc;
+      margin: 8px 0 22px;
+      font-size: 14px;
+    }
+
+    .qr-box {
+      background: white;
+      border-radius: 18px;
+      padding: 20px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    #qrcode {
+      width: 260px;
+      height: 260px;
+    }
+
+    #qrcode img,
+    #qrcode canvas {
+      display: block;
+      width: 260px !important;
+      height: 260px !important;
+    }
+
+    .ticket-info {
+      background: rgba(0,0,0,.18);
+      border-radius: 15px;
+      padding: 15px;
+      margin-top: 5px;
+      text-align: left;
+    }
+
+    .label {
+      color: #9aa8bb;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .value {
+      font-size: 18px;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .instruction {
+      color: #b9c7dc;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 18px;
+    }
+
+    .error {
+      display: none;
+      color: #ff8f8f;
+      background: rgba(220,38,38,.15);
+      border: 1px solid rgba(220,38,38,.35);
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 15px;
+      background: #d7a52b;
+      color: #07162f;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    @media(max-width: 400px) {
+      #qrcode,
+      #qrcode img,
+      #qrcode canvas {
+        width: 220px !important;
+        height: 220px !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="card">
+
+    <div class="brand">
+      NICOM GROUP PRÉSENTE
+    </div>
+
+    <h1>PAHIN LÉNOU</h1>
+
+    <div class="subtitle">
+      Concert Live • Billet officiel
+    </div>
+
+    <div class="qr-box">
+      <div id="qrcode"></div>
+    </div>
+
+    <div class="ticket-info">
+
+      <div class="label">
+        Catégorie
+      </div>
+
+      <div class="value" id="category">
+        —
+      </div>
+
+    </div>
+
+    <div class="instruction">
+      Présentez ce QR code à l'entrée.
+      Il sera contrôlé par le système sécurisé
+      de validation des tickets.
+    </div>
+
+    <div id="error" class="error">
+      QR code impossible à générer.
+      Vérifiez le lien du ticket.
+    </div>
+
+    <button onclick="window.print()">
+      Imprimer / Enregistrer le ticket
+    </button>
+
+  </main>
+
+
+  <script>
+
+    /*
+      Récupération des informations
+      dans l'URL.
+
+      Exemple :
+
+      ticket.html?token=ABC123&category=VIP
+    */
+
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
+    const token = params.get("token");
+    const category = params.get("category") || "Ticket";
+
+    const qrContainer =
+      document.getElementById("qrcode");
+
+    const errorBox =
+      document.getElementById("error");
+
+    document.getElementById("category")
+      .textContent = category;
+
+
+    if (!token) {
+
+      errorBox.style.display = "block";
+
+      qrContainer.innerHTML = "";
+
+    } else {
+
+      /*
+        Le QR contient directement le token.
+
+        Le scanner actuel de Pahin Lénou
+        sait déjà récupérer un token brut.
+      */
+
+      new QRCode(qrContainer, {
+
+        text: token,
+
+        width: 260,
+
+        height: 260,
+
+        correctLevel:
+          QRCode.CorrectLevel.H
+
+      });
+
+    }
+
+  </script>
+
+</body>
+</html>
