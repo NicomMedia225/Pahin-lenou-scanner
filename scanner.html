@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#07162f" />
+  <title>Pahin Lénou — Contrôle de tickets</title>
+
+  <!-- QR scanner library -->
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+
+  <style>
+    :root{
+      --navy:#07162f;
+      --navy2:#0c2348;
+      --gold:#d7a52b;
+      --gold2:#f0c85a;
+      --white:#fff;
+      --muted:#9aa8bb;
+      --green:#16a34a;
+      --red:#dc2626;
+      --orange:#d97706;
+      --card:#0d1f3d;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:
+        radial-gradient(circle at 50% -10%, #173968 0, transparent 42%),
+        linear-gradient(160deg,var(--navy),#020916);
+      color:var(--white);
+    }
+    .app{max-width:760px;margin:auto;padding:18px 14px 35px}
+    header{text-align:center;padding:10px 0 18px}
+    .brand{font-size:14px;letter-spacing:3px;font-weight:800;color:var(--gold2)}
+    h1{font-size:31px;margin:4px 0 2px;letter-spacing:.5px}
+    .subtitle{color:#d6deea;font-size:14px}
+    .panel{
+      background:rgba(13,31,61,.92);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:20px;
+      padding:14px;
+      box-shadow:0 18px 45px rgba(0,0,0,.28);
+      margin-bottom:14px;
+    }
+    #reader{
+      width:100%;
+      overflow:hidden;
+      border-radius:15px;
+      background:#000;
+      min-height:120px;
+    }
+    #reader video{border-radius:15px}
+    .controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+    button{
+      appearance:none;border:0;border-radius:12px;padding:12px 15px;
+      font-weight:800;font-size:14px;cursor:pointer;
+    }
+    .primary{background:var(--gold);color:#07162f}
+    .secondary{background:#1b3155;color:#fff}
+    .danger{background:#7f1d1d;color:#fff}
+    .status{
+      border-radius:16px;padding:18px;margin-top:12px;display:none;
+      border:1px solid rgba(255,255,255,.12)
+    }
+    .status.show{display:block}
+    .status.success{background:rgba(22,163,74,.18);border-color:rgba(74,222,128,.45)}
+    .status.error{background:rgba(220,38,38,.18);border-color:rgba(248,113,113,.45)}
+    .status.warning{background:rgba(217,119,6,.18);border-color:rgba(251,191,36,.45)}
+    .status h2{margin:0 0 7px;font-size:23px}
+    .ticket{
+      display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px
+    }
+    .item{background:rgba(0,0,0,.18);border-radius:10px;padding:10px}
+    .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+    .value{font-weight:800;margin-top:2px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .stat{background:#091a34;border-radius:12px;padding:11px;text-align:center}
+    .stat b{display:block;font-size:21px}
+    .stat span{font-size:10px;color:var(--muted)}
+    .manual{display:flex;gap:8px}
+    input{
+      flex:1;min-width:0;border:1px solid #334a70;background:#07162f;color:#fff;
+      border-radius:12px;padding:13px;font-size:15px;outline:none;
+    }
+    input:focus{border-color:var(--gold)}
+    details summary{cursor:pointer;font-weight:800;color:#e8edf5}
+    .settings{margin-top:12px;display:grid;gap:9px}
+    .hint{color:var(--muted);font-size:12px;line-height:1.5}
+    .footer{text-align:center;color:#73829a;font-size:11px;padding:10px}
+    .pulse{animation:pulse .65s ease}
+    @keyframes pulse{50%{transform:scale(1.015)}}
+    @media(max-width:520px){
+      h1{font-size:27px}
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .ticket{grid-template-columns:1fr}
+      .manual{flex-direction:column}
+      button{width:100%}
+      .controls{flex-direction:column}
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+  <header>
+    <div class="brand">NICOM GROUP PRÉSENTE</div>
+    <h1>PAHIN LÉNOU</h1>
+    <div class="subtitle">Contrôle sécurisé des tickets • Concert Live</div>
+  </header>
+
+  <section class="panel">
+    <div id="reader"></div>
+    <div class="controls">
+      <button class="primary" id="startBtn">Démarrer la caméra</button>
+      <button class="secondary" id="stopBtn">Arrêter</button>
+    </div>
+    <div class="hint" style="margin-top:10px">
+      Placez le QR dans le cadre. La validation est effectuée par Supabase.
+      Un ticket déjà utilisé doit être refusé.
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="stats">
+      <div class="stat"><b id="total">0</b><span>CONTRÔLÉS</span></div>
+      <div class="stat"><b id="gp">0</b><span>GP</span></div>
+      <div class="stat"><b id="pr">0</b><span>PR</span></div>
+      <div class="stat"><b id="vip">0</b><span>VIP</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <details>
+      <summary>Contrôle manuel / dépannage</summary>
+      <div style="height:10px"></div>
+      <div class="manual">
+        <input id="manualInput" placeholder="Coller le token ou le lien du QR" autocomplete="off" />
+        <button class="primary" id="manualBtn">Vérifier</button>
+      </div>
+      <div class="hint" style="margin-top:8px">
+        Cette option permet de tester un ticket sans caméra.
+      </div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <details>
+      <summary>Configuration technique</summary>
+      <div class="settings">
+        <label class="hint">URL de la fonction Supabase</label>
+        <input id="endpoint" value="https://exhyfhuvgumbbabohcrq.supabase.co/functions/v1/validate-ticket" />
+        <label class="hint">Le bouton « Enregistrer » mémorise l'URL sur cet appareil.</label>
+        <button class="secondary" id="saveSettings">Enregistrer la configuration</button>
+      </div>
+    </details>
+  </section>
+
+  <section id="statusBox" class="status">
+    <h2 id="statusTitle"></h2>
+    <div id="statusMessage"></div>
+    <div id="ticketInfo" class="ticket"></div>
+    <div class="controls">
+      <button class="primary" id="nextBtn">Scanner le ticket suivant</button>
+    </div>
+  </section>
+
+  <div class="footer">
+    PAHIN LÉNOU • Système de contrôle sécurisé<br>
+    Ne jamais partager les tokens de tickets.
+  </div>
+</div>
+
+<script>
+(() => {
+  let scanner = null;
+  let scanning = false;
+  let processing = false;
+  let lastDecoded = "";
+  let lastDecodedAt = 0;
+
+  const $ = id => document.getElementById(id);
+
+  const endpoint = $("endpoint");
+  endpoint.value = localStorage.getItem("pahin_endpoint") || endpoint.value;
+
+  const stats = JSON.parse(localStorage.getItem("pahin_stats") || '{"total":0,"GP":0,"PR":0,"VIP":0}');
+  renderStats();
+
+  function renderStats(){
+    $("total").textContent = stats.total;
+    $("gp").textContent = stats.GP || 0;
+    $("pr").textContent = stats.PR || 0;
+    $("vip").textContent = stats.VIP || 0;
+  }
+
+  function saveStats(){
+    localStorage.setItem("pahin_stats", JSON.stringify(stats));
+    renderStats();
+  }
+
+  function showStatus(type, title, message, ticket){
+    const box = $("statusBox");
+    box.className = "status show " + type + " pulse";
+    $("statusTitle").textContent = title;
+    $("statusMessage").textContent = message || "";
+    $("ticketInfo").innerHTML = "";
+
+    if(ticket){
+      const rows = [
+        ["Ticket", ticket.ticket_number],
+        ["Catégorie", ticket.category],
+        ["Prix", ticket.price != null ? Number(ticket.price).toLocaleString("fr-FR") + " FCFA" : "—"],
+        ["Statut", ticket.status || "—"],
+        ["Contrôlé le", ticket.used_at ? new Date(ticket.used_at).toLocaleString("fr-FR") : "—"],
+        ["Contrôlé par", ticket.used_by || "—"]
+      ];
+      $("ticketInfo").innerHTML = rows.map(([l,v]) =>
+        `<div class="item"><div class="label">${escapeHtml(l)}</div><div class="value">${escapeHtml(String(v ?? "—"))}</div></div>`
+      ).join("");
+    }
+    setTimeout(()=>box.classList.remove("pulse"),700);
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+  }
+
+  function extractToken(raw){
+    raw = String(raw || "").trim();
+    if(!raw) return "";
+
+    // URL containing ?token=...
+    try{
+      const u = new URL(raw);
+      const t = u.searchParams.get("token");
+      if(t) return t;
+    }catch(e){}
+
+    // JSON payload containing token
+    try{
+      const obj = JSON.parse(raw);
+      if(obj && obj.token) return String(obj.token).trim();
+      if(obj && obj.url) return extractToken(obj.url);
+    }catch(e){}
+
+    // Raw token
+    return raw;
+  }
+
+  async function validate(raw){
+    if(processing) return;
+    const token = extractToken(raw);
+    if(!token) return;
+
+    processing = true;
+    stopScanner();
+
+    try{
+      const base = endpoint.value.trim().replace(/\/+$/,"");
+      if(!base) throw new Error("URL Supabase manquante.");
+
+      const url = base + "?token=" + encodeURIComponent(token);
+      const response = await fetch(url, {
+        method:"GET",
+        headers:{"Accept":"application/json"}
+      });
+
+      let data = {};
+      try { data = await response.json(); }
+      catch(e) { throw new Error("Réponse non JSON reçue du serveur."); }
+
+      const ticket = data.ticket || null;
+
+      if(response.ok && data.success === true && data.status === "USED"){
+        stats.total++;
+        if(ticket && stats[ticket.category] !== undefined) stats[ticket.category]++;
+        saveStats();
+
+        showStatus(
+          "success",
+          "ACCÈS AUTORISÉ",
+          data.message || "Ticket validé avec succès.",
+          ticket
+        );
+      } else if(response.status === 409 || data.status === "USED"){
+        showStatus(
+          "error",
+          "TICKET DÉJÀ UTILISÉ",
+          data.message || "Ce ticket a déjà été contrôlé.",
+          ticket
+        );
+      } else if(response.status === 404 || data.status === "INVALID"){
+        showStatus(
+          "error",
+          "TICKET INVALIDE",
+          data.message || "Ticket introuvable ou invalide.",
+          ticket
+        );
+      } else {
+        showStatus(
+          "warning",
+          "CONTRÔLE IMPOSSIBLE",
+          data.message || ("Erreur serveur HTTP " + response.status),
+          ticket
+        );
+      }
+    }catch(err){
+      showStatus("warning","ERREUR DE CONNEXION",err.message || "Impossible de joindre le serveur.",null);
+    }finally{
+      processing = false;
+    }
+  }
+
+  async function startScanner(){
+    if(scanning) return;
+    if(typeof Html5Qrcode === "undefined"){
+      showStatus("warning","SCANNER NON DISPONIBLE","La bibliothèque QR n'a pas encore été chargée. Vérifiez la connexion Internet.",null);
+      return;
+    }
+
+    scanner = new Html5Qrcode("reader");
+    const config = {
+      fps: 10,
+      qrbox: (w,h) => {
+        const size = Math.floor(Math.min(w,h) * 0.72);
+        return {width:size,height:size};
+      },
+      aspectRatio: 1.0
+    };
+
+    try{
+      await scanner.start(
+        { facingMode: "environment" },
+        config,
+        decodedText => {
+          const now = Date.now();
+          if(decodedText === lastDecoded && now - lastDecodedAt < 2500) return;
+          lastDecoded = decodedText;
+          lastDecodedAt = now;
+          validate(decodedText);
+        },
+        () => {}
+      );
+      scanning = true;
+      $("startBtn").textContent = "Caméra active";
+      $("startBtn").disabled = true;
+    }catch(err){
+      showStatus(
+        "warning",
+        "CAMÉRA NON DISPONIBLE",
+        "Autorisez l'accès à la caméra. Sur iPhone, utilisez de préférence une page HTTPS plutôt qu'un fichier local.",
+        null
+      );
+    }
+  }
+
+  async function stopScanner(){
+    if(!scanner || !scanning) return;
+    try{
+      await scanner.stop();
+      await scanner.clear();
+    }catch(e){}
+    scanning = false;
+    $("startBtn").disabled = false;
+    $("startBtn").textContent = "Démarrer la caméra";
+  }
+
+  $("startBtn").addEventListener("click", startScanner);
+  $("stopBtn").addEventListener("click", stopScanner);
+  $("manualBtn").addEventListener("click", () => validate($("manualInput").value));
+  $("manualInput").addEventListener("keydown", e => {
+    if(e.key === "Enter") validate(e.target.value);
+  });
+
+  $("nextBtn").addEventListener("click", () => {
+    $("statusBox").className = "status";
+    $("manualInput").value = "";
+    startScanner();
+  });
+
+  $("saveSettings").addEventListener("click", () => {
+    localStorage.setItem("pahin_endpoint", endpoint.value.trim());
+    showStatus("success","CONFIGURATION ENREGISTRÉE","L'URL Supabase a été mémorisée sur cet appareil.",null);
+  });
+})();
+</script>
+</body>
+</html>
