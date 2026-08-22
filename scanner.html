@@ -266,9 +266,12 @@
 
       const url = base + "?token=" + encodeURIComponent(token);
       const response = await fetch(url, {
-        method:"GET",
-        headers:{"Accept":"application/json"}
-      });
+    method: "GET",
+    headers: {
+        "Accept": "application/json",
+        "apikey": "sb_publishable_vTLl_AeDz-eFqp3GOPVq6Q_KZJ62Ey_",
+    }
+});
 
       let data = {};
       try { data = await response.json(); }
