@@ -348,7 +348,7 @@
       ) || cameras[cameras.length - 1];
 
     await scanner.start(
-      rearCamera.id,
+      { facingMode: "environment" },
       config,
       decodedText => {
         const now = Date.now();
