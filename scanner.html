@@ -1,420 +1,1582 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#07162f" />
-  <title>Pahin Lénou — Contrôle de tickets</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07162f">
+<title>Pahin Lénou — Contrôle de tickets</title>
 
-  <!-- QR scanner library -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
-  <style>
-    :root{
-      --navy:#07162f;
-      --navy2:#0c2348;
-      --gold:#d7a52b;
-      --gold2:#f0c85a;
-      --white:#fff;
-      --muted:#9aa8bb;
-      --green:#16a34a;
-      --red:#dc2626;
-      --orange:#d97706;
-      --card:#0d1f3d;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      min-height:100vh;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      background:
-        radial-gradient(circle at 50% -10%, #173968 0, transparent 42%),
-        linear-gradient(160deg,var(--navy),#020916);
-      color:var(--white);
-    }
-    .app{max-width:760px;margin:auto;padding:18px 14px 35px}
-    header{text-align:center;padding:10px 0 18px}
-    .brand{font-size:14px;letter-spacing:3px;font-weight:800;color:var(--gold2)}
-    h1{font-size:31px;margin:4px 0 2px;letter-spacing:.5px}
-    .subtitle{color:#d6deea;font-size:14px}
-    .panel{
-      background:rgba(13,31,61,.92);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:20px;
-      padding:14px;
-      box-shadow:0 18px 45px rgba(0,0,0,.28);
-      margin-bottom:14px;
-    }
-    #reader{
-      width:100%;
-      overflow:hidden;
-      border-radius:15px;
-      background:#000;
-      min-height:120px;
-    }
-    #reader video{border-radius:15px}
-    .controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
-    button{
-      appearance:none;border:0;border-radius:12px;padding:12px 15px;
-      font-weight:800;font-size:14px;cursor:pointer;
-    }
-    .primary{background:var(--gold);color:#07162f}
-    .secondary{background:#1b3155;color:#fff}
-    .danger{background:#7f1d1d;color:#fff}
-    .status{
-      border-radius:16px;padding:18px;margin-top:12px;display:none;
-      border:1px solid rgba(255,255,255,.12)
-    }
-    .status.show{display:block}
-    .status.success{background:rgba(22,163,74,.18);border-color:rgba(74,222,128,.45)}
-    .status.error{background:rgba(220,38,38,.18);border-color:rgba(248,113,113,.45)}
-    .status.warning{background:rgba(217,119,6,.18);border-color:rgba(251,191,36,.45)}
-    .status h2{margin:0 0 7px;font-size:23px}
-    .ticket{
-      display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px
-    }
-    .item{background:rgba(0,0,0,.18);border-radius:10px;padding:10px}
-    .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
-    .value{font-weight:800;margin-top:2px}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-    .stat{background:#091a34;border-radius:12px;padding:11px;text-align:center}
-    .stat b{display:block;font-size:21px}
-    .stat span{font-size:10px;color:var(--muted)}
-    .manual{display:flex;gap:8px}
-    input{
-      flex:1;min-width:0;border:1px solid #334a70;background:#07162f;color:#fff;
-      border-radius:12px;padding:13px;font-size:15px;outline:none;
-    }
-    input:focus{border-color:var(--gold)}
-    details summary{cursor:pointer;font-weight:800;color:#e8edf5}
-    .settings{margin-top:12px;display:grid;gap:9px}
-    .hint{color:var(--muted);font-size:12px;line-height:1.5}
-    .footer{text-align:center;color:#73829a;font-size:11px;padding:10px}
-    .pulse{animation:pulse .65s ease}
-    @keyframes pulse{50%{transform:scale(1.015)}}
-    @media(max-width:520px){
-      h1{font-size:27px}
-      .stats{grid-template-columns:repeat(2,1fr)}
-      .ticket{grid-template-columns:1fr}
-      .manual{flex-direction:column}
-      button{width:100%}
-      .controls{flex-direction:column}
-    }
-  </style>
+<style>
+:root{
+  --navy:#07162f;
+  --navy2:#0c2348;
+  --gold:#d7a52b;
+  --gold2:#f0c85a;
+  --white:#fff;
+  --muted:#9aa8bb;
+  --green:#16a34a;
+  --red:#dc2626;
+  --orange:#d97706
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 50% -10%,#173968 0,transparent 42%),
+    linear-gradient(160deg,var(--navy),#020916);
+  color:#fff
+}
+
+.app{
+  max-width:760px;
+  margin:auto;
+  padding:18px 14px 35px
+}
+
+header{
+  text-align:center;
+  padding:10px 0 18px
+}
+
+.brand{
+  font-size:14px;
+  letter-spacing:3px;
+  font-weight:800;
+  color:var(--gold2)
+}
+
+h1{
+  font-size:31px;
+  margin:4px 0 2px
+}
+
+.subtitle{
+  color:#d6deea;
+  font-size:14px
+}
+
+.panel{
+  background:rgba(13,31,61,.92);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;
+  padding:14px;
+  box-shadow:0 18px 45px rgba(0,0,0,.28);
+  margin-bottom:14px
+}
+
+#reader{
+  position:relative;
+  width:100%;
+  min-height:240px;
+  overflow:hidden;
+  border-radius:15px;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center
+}
+
+#video{
+  display:block;
+  width:100%;
+  height:auto;
+  min-height:240px;
+  max-height:62vh;
+  object-fit:cover;
+  background:#000;
+  border-radius:15px
+}
+
+#scanFrame{
+  position:absolute;
+  width:min(72vw,320px);
+  height:min(72vw,320px);
+  max-width:72%;
+  max-height:72%;
+  border:3px solid var(--gold2);
+  border-radius:18px;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.2);
+  pointer-events:none
+}
+
+.hidden{
+  display:none!important
+}
+
+#cameraHint{
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:12px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(0,0,0,.58);
+  color:#fff;
+  font-size:12px;
+  text-align:center
+}
+
+#tapPlayBtn{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  background:rgba(7,22,47,.86);
+  color:#fff;
+  border:0;
+  font-size:15px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:10px;
+  cursor:pointer;
+  z-index:5
+}
+
+#tapPlayBtn .ico{
+  width:54px;
+  height:54px;
+  border-radius:50%;
+  background:var(--gold);
+  color:#07162f;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px
+}
+
+.controls{
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  margin-top:12px
+}
+
+button{
+  appearance:none;
+  border:0;
+  border-radius:12px;
+  padding:12px 15px;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer
+}
+
+button:disabled{
+  opacity:.55;
+  cursor:not-allowed
+}
+
+.primary{
+  background:var(--gold);
+  color:#07162f
+}
+
+.secondary{
+  background:#1b3155;
+  color:#fff
+}
+
+.status{
+  border-radius:16px;
+  padding:18px;
+  margin-top:12px;
+  display:none;
+  border:1px solid rgba(255,255,255,.12)
+}
+
+.status.show{
+  display:block
+}
+
+.status.success{
+  background:rgba(22,163,74,.18);
+  border-color:rgba(74,222,128,.45)
+}
+
+.status.error{
+  background:rgba(220,38,38,.18);
+  border-color:rgba(248,113,113,.45)
+}
+
+.status.warning{
+  background:rgba(217,119,6,.18);
+  border-color:rgba(251,191,36,.45)
+}
+
+.status h2{
+  margin:0 0 7px;
+  font-size:23px
+}
+
+.ticket{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:13px
+}
+
+.item{
+  background:rgba(0,0,0,.18);
+  border-radius:10px;
+  padding:10px
+}
+
+.label{
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.7px
+}
+
+.value{
+  font-weight:800;
+  margin-top:2px
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px
+}
+
+.stat{
+  background:#091a34;
+  border-radius:12px;
+  padding:11px;
+  text-align:center
+}
+
+.stat b{
+  display:block;
+  font-size:21px
+}
+
+.stat span{
+  font-size:10px;
+  color:var(--muted)
+}
+
+.manual{
+  display:flex;
+  gap:8px
+}
+
+input{
+  flex:1;
+  min-width:0;
+  border:1px solid #334a70;
+  background:#07162f;
+  color:#fff;
+  border-radius:12px;
+  padding:13px;
+  font-size:15px;
+  outline:none
+}
+
+input:focus{
+  border-color:var(--gold)
+}
+
+details summary{
+  cursor:pointer;
+  font-weight:800;
+  color:#e8edf5
+}
+
+.settings{
+  margin-top:12px;
+  display:grid;
+  gap:9px
+}
+
+.hint{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5
+}
+
+.hint.warn{
+  color:#f0c85a
+}
+
+.footer{
+  text-align:center;
+  color:#73829a;
+  font-size:11px;
+  padding:10px
+}
+
+.pulse{
+  animation:pulse .65s ease
+}
+
+@keyframes pulse{
+  50%{transform:scale(1.015)}
+}
+
+@media(max-width:520px){
+  h1{font-size:27px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .ticket{grid-template-columns:1fr}
+  .manual{flex-direction:column}
+  button{width:100%}
+  .controls{flex-direction:column}
+  #reader,#video{min-height:260px}
+}
+</style>
 </head>
 
 <body>
+
 <div class="app">
-  <header>
-    <div class="brand">NICOM GROUP PRÉSENTE</div>
-    <h1>PAHIN LÉNOU</h1>
-    <div class="subtitle">Contrôle sécurisé des tickets • Concert Live</div>
-  </header>
 
-  <section class="panel">
-    <div id="reader"></div>
-    <div class="controls">
-      <button class="primary" id="startBtn">Démarrer la caméra</button>
-      <button class="secondary" id="stopBtn">Arrêter</button>
+<header>
+  <div class="brand">NICOM GROUP PRÉSENTE</div>
+  <h1>PAHIN LÉNOU</h1>
+  <div class="subtitle">Contrôle sécurisé des tickets • Concert Live</div>
+</header>
+
+<section class="panel">
+
+  <div id="reader">
+
+    <video
+      id="video"
+      class="hidden"
+      autoplay
+      playsinline
+      webkit-playsinline="true"
+      muted>
+    </video>
+
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <div id="scanFrame" class="hidden"></div>
+
+    <button id="tapPlayBtn" class="hidden" type="button">
+      <span class="ico">▶️</span>
+      Appuyez pour activer la caméra
+    </button>
+
+    <div id="cameraHint">
+      Appuyez sur « Démarrer la caméra »
     </div>
-    <div class="hint" style="margin-top:10px">
-      Placez le QR dans le cadre. La validation est effectuée par Supabase.
-      Un ticket déjà utilisé doit être refusé.
-    </div>
-  </section>
 
-  <section class="panel">
-    <div class="stats">
-      <div class="stat"><b id="total">0</b><span>CONTRÔLÉS</span></div>
-      <div class="stat"><b id="gp">0</b><span>GP</span></div>
-      <div class="stat"><b id="pr">0</b><span>PR</span></div>
-      <div class="stat"><b id="vip">0</b><span>VIP</span></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <details>
-      <summary>Contrôle manuel / dépannage</summary>
-      <div style="height:10px"></div>
-      <div class="manual">
-        <input id="manualInput" placeholder="Coller le token ou le lien du QR" autocomplete="off" />
-        <button class="primary" id="manualBtn">Vérifier</button>
-      </div>
-      <div class="hint" style="margin-top:8px">
-        Cette option permet de tester un ticket sans caméra.
-      </div>
-    </details>
-  </section>
-
-  <section class="panel">
-    <details>
-      <summary>Configuration technique</summary>
-      <div class="settings">
-        <label class="hint">URL de la fonction Supabase</label>
-        <input id="endpoint" value="https://exhyfhuvgumbbabohcrq.supabase.co/functions/v1/validate-ticket" />
-        <label class="hint">Le bouton « Enregistrer » mémorise l'URL sur cet appareil.</label>
-        <button class="secondary" id="saveSettings">Enregistrer la configuration</button>
-      </div>
-    </details>
-  </section>
-
-  <section id="statusBox" class="status">
-    <h2 id="statusTitle"></h2>
-    <div id="statusMessage"></div>
-    <div id="ticketInfo" class="ticket"></div>
-    <div class="controls">
-      <button class="primary" id="nextBtn">Scanner le ticket suivant</button>
-    </div>
-  </section>
-
-  <div class="footer">
-    PAHIN LÉNOU • Système de contrôle sécurisé<br>
-    Ne jamais partager les tokens de tickets.
   </div>
+
+  <div class="controls">
+
+    <button class="primary" id="startBtn">
+      Démarrer la caméra
+    </button>
+
+    <button class="secondary" id="stopBtn">
+      Arrêter
+    </button>
+
+  </div>
+
+  <div class="hint" style="margin-top:10px">
+    Placez le QR dans le cadre.
+    La validation est effectuée par Supabase.
+    Un ticket déjà utilisé est automatiquement refusé.
+  </div>
+
+  <div class="hint warn" style="margin-top:6px">
+    ⚠️ Ouvrez ce lien directement dans <strong>Safari</strong>
+    (pas depuis WhatsApp, Instagram ou Messenger) —
+    sinon la caméra peut rester noire même si tout fonctionne correctement.
+  </div>
+
+</section>
+
+<section class="panel">
+
+  <div class="stats">
+
+    <div class="stat">
+      <b id="total">0</b>
+      <span>CONTRÔLÉS</span>
+    </div>
+
+    <div class="stat">
+      <b id="gp">0</b>
+      <span>GP</span>
+    </div>
+
+    <div class="stat">
+      <b id="pr">0</b>
+      <span>PR</span>
+    </div>
+
+    <div class="stat">
+      <b id="vip">0</b>
+      <span>VIP</span>
+    </div>
+
+  </div>
+
+</section>
+
+<section class="panel">
+
+  <details>
+
+    <summary>
+      Contrôle manuel / dépannage
+    </summary>
+
+    <div style="height:10px"></div>
+
+    <div class="manual">
+
+      <input
+        id="manualInput"
+        placeholder="Coller le token ou le lien du QR"
+        autocomplete="off">
+
+      <button class="primary" id="manualBtn">
+        Vérifier
+      </button>
+
+    </div>
+
+    <div class="hint" style="margin-top:8px">
+      Cette option permet de tester un ticket sans caméra.
+    </div>
+
+  </details>
+
+</section>
+
+<section class="panel">
+
+  <details>
+
+    <summary>
+      Configuration technique
+    </summary>
+
+    <div class="settings">
+
+      <label class="hint">
+        URL de la fonction Supabase
+      </label>
+
+      <input
+        id="endpoint"
+        value="https://exhyfhuvgumbbabohcrq.supabase.co/functions/v1/validate-ticket">
+
+      <label class="hint">
+        Le bouton « Enregistrer » mémorise l'URL sur cet appareil.
+      </label>
+
+      <button class="secondary" id="saveSettings">
+        Enregistrer la configuration
+      </button>
+
+    </div>
+
+  </details>
+
+</section>
+
+<section id="statusBox" class="status">
+
+  <h2 id="statusTitle"></h2>
+
+  <div id="statusMessage"></div>
+
+  <div id="ticketInfo" class="ticket"></div>
+
+  <div class="controls">
+
+    <button class="primary" id="nextBtn">
+      Scanner le ticket suivant
+    </button>
+
+  </div>
+
+</section>
+
+<div class="footer">
+  PAHIN LÉNOU • Système de contrôle sécurisé<br>
+  Ne jamais partager les tokens de tickets.
+</div>
+
 </div>
 
 <script>
-(() => {
-  let scanner = null;
-  let scanning = false;
-  let processing = false;
-  let lastDecoded = "";
-  let lastDecodedAt = 0;
 
-  const $ = id => document.getElementById(id);
+(()=>{
+'use strict';
 
-  const endpoint = $("endpoint");
-  endpoint.value = localStorage.getItem("pahin_endpoint") || endpoint.value;
+const DEFAULT_ENDPOINT =
+'https://exhyfhuvgumbbabohcrq.supabase.co/functions/v1/validate-ticket';
 
-  const stats = JSON.parse(localStorage.getItem("pahin_stats") || '{"total":0,"GP":0,"PR":0,"VIP":0}');
+const SCAN_INTERVAL_MS = 120;
+const SAME_CODE_COOLDOWN_MS = 2500;
+
+let stream = null;
+let scanning = false;
+let processing = false;
+let animationId = null;
+let lastDecoded = '';
+let lastDecodedAt = 0;
+let lastFrameAt = 0;
+
+const $ = id => document.getElementById(id);
+
+const video = $('video');
+const canvas = $('canvas');
+const endpoint = $('endpoint');
+const tapPlayBtn = $('tapPlayBtn');
+
+const ctx = canvas.getContext(
+  '2d',
+  {willReadFrequently:true}
+);
+
+endpoint.value =
+localStorage.getItem('pahin_endpoint') ||
+DEFAULT_ENDPOINT;
+
+let stats;
+
+try{
+
+  stats = JSON.parse(
+    localStorage.getItem('pahin_stats') ||
+    '{"total":0,"GP":0,"PR":0,"VIP":0}'
+  );
+
+}catch(e){
+
+  stats = {
+    total:0,
+    GP:0,
+    PR:0,
+    VIP:0
+  };
+
+}
+
+renderStats();
+
+function renderStats(){
+
+  $('total').textContent =
+    Number(stats.total) || 0;
+
+  $('gp').textContent =
+    Number(stats.GP) || 0;
+
+  $('pr').textContent =
+    Number(stats.PR) || 0;
+
+  $('vip').textContent =
+    Number(stats.VIP) || 0;
+
+}
+
+function saveStats(){
+
+  localStorage.setItem(
+    'pahin_stats',
+    JSON.stringify(stats)
+  );
+
   renderStats();
 
-  function renderStats(){
-    $("total").textContent = stats.total;
-    $("gp").textContent = stats.GP || 0;
-    $("pr").textContent = stats.PR || 0;
-    $("vip").textContent = stats.VIP || 0;
+}
+
+function esc(s){
+
+  return String(s).replace(
+    /[&<>"']/g,
+    c => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    }[c])
+  );
+
+}
+
+function showStatus(
+  type,
+  title,
+  message,
+  ticket
+){
+
+  const box = $('statusBox');
+
+  box.className =
+    'status show ' +
+    type +
+    ' pulse';
+
+  $('statusTitle').textContent =
+    title;
+
+  $('statusMessage').textContent =
+    message || '';
+
+  $('ticketInfo').innerHTML = '';
+
+  if(ticket){
+
+    const rows = [
+
+      [
+        'Ticket',
+        ticket.ticket_number
+      ],
+
+      [
+        'Catégorie',
+        ticket.category
+      ],
+
+      [
+        'Prix',
+        ticket.price != null
+          ? Number(ticket.price)
+              .toLocaleString('fr-FR') +
+            ' FCFA'
+          : '—'
+      ],
+
+      [
+        'Statut',
+        ticket.status || '—'
+      ],
+
+      [
+        'Contrôlé le',
+        ticket.used_at
+          ? new Date(ticket.used_at)
+              .toLocaleString('fr-FR')
+          : '—'
+      ],
+
+      [
+        'Contrôlé par',
+        ticket.used_by || '—'
+      ]
+
+    ];
+
+    $('ticketInfo').innerHTML =
+      rows.map(([l,v]) =>
+        '<div class="item">' +
+        '<div class="label">' +
+        esc(l) +
+        '</div>' +
+        '<div class="value">' +
+        esc(String(v ?? '—')) +
+        '</div>' +
+        '</div>'
+      ).join('');
+
   }
 
-  function saveStats(){
-    localStorage.setItem("pahin_stats", JSON.stringify(stats));
-    renderStats();
+  setTimeout(
+    () => box.classList.remove('pulse'),
+    700
+  );
+
+}
+
+function clearStatus(){
+
+  $('statusBox').className =
+    'status';
+
+  $('statusTitle').textContent =
+    '';
+
+  $('statusMessage').textContent =
+    '';
+
+  $('ticketInfo').innerHTML =
+    '';
+
+}
+
+function extractToken(raw){
+
+  raw = String(raw || '').trim();
+
+  if(!raw){
+    return '';
   }
 
-  function showStatus(type, title, message, ticket){
-    const box = $("statusBox");
-    box.className = "status show " + type + " pulse";
-    $("statusTitle").textContent = title;
-    $("statusMessage").textContent = message || "";
-    $("ticketInfo").innerHTML = "";
+  try{
 
-    if(ticket){
-      const rows = [
-        ["Ticket", ticket.ticket_number],
-        ["Catégorie", ticket.category],
-        ["Prix", ticket.price != null ? Number(ticket.price).toLocaleString("fr-FR") + " FCFA" : "—"],
-        ["Statut", ticket.status || "—"],
-        ["Contrôlé le", ticket.used_at ? new Date(ticket.used_at).toLocaleString("fr-FR") : "—"],
-        ["Contrôlé par", ticket.used_by || "—"]
-      ];
-      $("ticketInfo").innerHTML = rows.map(([l,v]) =>
-        `<div class="item"><div class="label">${escapeHtml(l)}</div><div class="value">${escapeHtml(String(v ?? "—"))}</div></div>`
-      ).join("");
+    const u = new URL(raw);
+
+    const t =
+      u.searchParams.get('token');
+
+    if(t){
+      return t.trim();
     }
-    setTimeout(()=>box.classList.remove("pulse"),700);
-  }
 
-  function escapeHtml(s){
-    return s.replace(/[&<>"']/g, c => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[c]));
-  }
+  }catch(e){}
 
-  function extractToken(raw){
-    raw = String(raw || "").trim();
-    if(!raw) return "";
+  try{
 
-    // URL containing ?token=...
-    try{
-      const u = new URL(raw);
-      const t = u.searchParams.get("token");
-      if(t) return t;
-    }catch(e){}
+    const o = JSON.parse(raw);
 
-    // JSON payload containing token
-    try{
-      const obj = JSON.parse(raw);
-      if(obj && obj.token) return String(obj.token).trim();
-      if(obj && obj.url) return extractToken(obj.url);
-    }catch(e){}
+    if(o && o.token){
 
-    // Raw token
-    return raw;
-  }
+      return String(o.token).trim();
 
-  async function validate(raw){
-    if(processing) return;
-    const token = extractToken(raw);
-    const response = await fetch(base, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    token: token
-  })
-});
-
-      let data = {};
-      try { data = await response.json(); }
-      catch(e) { throw new Error("Réponse non JSON reçue du serveur."); }
-
-      const ticket = data.ticket || null;
-
-      if(response.ok && data.success === true && data.status === "USED"){
-        stats.total++;
-        if(ticket && stats[ticket.category] !== undefined) stats[ticket.category]++;
-        saveStats();
-
-        showStatus(
-          "success",
-          "ACCÈS AUTORISÉ",
-          data.message || "Ticket validé avec succès.",
-          ticket
-        );
-      } else if(response.status === 409 || data.status === "USED"){
-        showStatus(
-          "error",
-          "TICKET DÉJÀ UTILISÉ",
-          data.message || "Ce ticket a déjà été contrôlé.",
-          ticket
-        );
-      } else if(response.status === 404 || data.status === "INVALID"){
-        showStatus(
-          "error",
-          "TICKET INVALIDE",
-          data.message || "Ticket introuvable ou invalide.",
-          ticket
-        );
-      } else {
-        showStatus(
-          "warning",
-          "CONTRÔLE IMPOSSIBLE",
-          data.message || ("Erreur serveur HTTP " + response.status),
-          ticket
-        );
-      }
-    }catch(err){
-      showStatus("warning","ERREUR DE CONNEXION",err.message || "Impossible de joindre le serveur.",null);
-    }finally{
-      processing = false;
     }
-  }
 
-  async function startScanner() {
-  if (scanning) return;
+    if(o && o.url){
 
-  if (typeof Html5Qrcode === "undefined") {
-    showStatus(
-      "warning",
-      "SCANNER NON DISPONIBLE",
-      "La bibliothèque QR n'a pas été chargée."
-    );
+      return extractToken(o.url);
+
+    }
+
+  }catch(e){}
+
+  return raw;
+
+}
+
+async function validate(raw){
+
+  if(processing){
     return;
   }
 
-  scanner = new Html5Qrcode("reader");
+  const token =
+    extractToken(raw);
 
-  const config = {
-    fps: 10,
-    qrbox: (w, h) => {
-      const size = Math.floor(Math.min(w, h) * 0.72);
-      return { width: size, height: size };
-    },
-    aspectRatio: 1.0
-  };
-
-  try {
-    const cameras = await Html5Qrcode.getCameras();
-
-    if (!cameras || cameras.length === 0) {
-      throw new Error("Aucune caméra disponible.");
-    }
-
-    // Cherche en priorité la caméra arrière
-    const rearCamera =
-      cameras.find(camera =>
-        /back|rear|environment|arrière/i.test(camera.label)
-      ) || cameras[cameras.length - 1];
-
-    await scanner.start(
-      { facingMode: "environment" },
-      config,
-      decodedText => {
-        const now = Date.now();
-
-        if (
-          decodedText === lastDecoded &&
-          now - lastDecodedAt < 2500
-        ) {
-          return;
-        }
-
-        lastDecoded = decodedText;
-        lastDecodedAt = now;
-
-        validate(decodedText);
-      },
-      () => {}
-    );
-
-    scanning = true;
-    $("startBtn").textContent = "Caméra active";
-    $("startBtn").disabled = true;
-
-  } catch (err) {
-    console.error("Erreur caméra :", err);
+  if(!token){
 
     showStatus(
-      "warning",
-      "CAMÉRA NON DISPONIBLE",
-      "Impossible de démarrer la caméra : " +
-        (err?.message || "erreur inconnue")
+      'error',
+      'QR CODE INVALIDE',
+      "Aucun token exploitable n'a été trouvé.",
+      null
     );
 
-    scanning = false;
+    return;
+
   }
+
+  const base =
+    endpoint.value.trim() ||
+    DEFAULT_ENDPOINT;
+
+  processing = true;
+
+  $('manualBtn').disabled =
+    true;
+
+  try{
+
+    const response =
+      await fetch(
+        base,
+        {
+          method:'POST',
+
+          headers:{
+            'Content-Type':
+              'application/json'
+          },
+
+          body:JSON.stringify({
+            token
+          })
+        }
+      );
+
+    let data = {};
+
+    try{
+
+      data =
+        await response.json();
+
+    }catch(e){
+
+      throw new Error(
+        'Réponse non JSON reçue du serveur.'
+      );
+
+    }
+
+    const ticket =
+      data.ticket || null;
+
+    if(
+      response.ok &&
+      data.success === true &&
+      data.status === 'USED'
+    ){
+
+      stats.total =
+        (Number(stats.total) || 0) + 1;
+
+      if(
+        ticket &&
+        ['GP','PR','VIP'].includes(
+          ticket.category
+        )
+      ){
+
+        stats[ticket.category] =
+          (Number(stats[ticket.category]) || 0) + 1;
+
+      }
+
+      saveStats();
+
+      await stopScanner();
+
+      showStatus(
+        'success',
+        'ACCÈS AUTORISÉ',
+        data.message ||
+        'Ticket validé avec succès.',
+        ticket
+      );
+
+    }
+
+    else if(
+      response.status === 409 ||
+      data.status === 'USED'
+    ){
+
+      await stopScanner();
+
+      showStatus(
+        'error',
+        'TICKET DÉJÀ UTILISÉ',
+        data.message ||
+        'Ce ticket a déjà été contrôlé.',
+        ticket
+      );
+
+    }
+
+    else if(
+      response.status === 404 ||
+      data.status === 'INVALID'
+    ){
+
+      await stopScanner();
+
+      showStatus(
+        'error',
+        'TICKET INVALIDE',
+        data.message ||
+        'Ticket introuvable ou invalide.',
+        ticket
+      );
+
+    }
+
+    else{
+
+      showStatus(
+        'warning',
+        'CONTRÔLE IMPOSSIBLE',
+        data.message ||
+        (
+          'Erreur serveur HTTP ' +
+          response.status
+        ),
+        ticket
+      );
+
+    }
+
+  }catch(err){
+
+    console.error(err);
+
+    showStatus(
+      'warning',
+      'ERREUR DE CONNEXION',
+      'Impossible de contacter le serveur. Vérifiez votre connexion Internet.',
+      null
+    );
+
+  }finally{
+
+    processing = false;
+
+    $('manualBtn').disabled =
+      false;
+
+  }
+
 }
 
-  async function stopScanner(){
-    if(!scanner || !scanning) return;
+async function acquireCameraStream(){
+
+  const attempts = [
+
+    {
+      video:{
+        facingMode:{
+          exact:'environment'
+        },
+        width:{
+          ideal:1280
+        },
+        height:{
+          ideal:720
+        }
+      },
+      audio:false
+    },
+
+    {
+      video:{
+        facingMode:{
+          ideal:'environment'
+        }
+      },
+      audio:false
+    },
+
+    {
+      video:true,
+      audio:false
+    }
+
+  ];
+
+  let lastError = null;
+
+  for(
+    const constraints of attempts
+  ){
+
     try{
-      await scanner.stop();
-      await scanner.clear();
-    }catch(e){}
-    scanning = false;
-    $("startBtn").disabled = false;
-    $("startBtn").textContent = "Démarrer la caméra";
+
+      return await navigator
+        .mediaDevices
+        .getUserMedia(
+          constraints
+        );
+
+    }catch(err){
+
+      lastError = err;
+
+      continue;
+
+    }
+
   }
 
-  $("startBtn").addEventListener("click", startScanner);
-  $("stopBtn").addEventListener("click", stopScanner);
-  $("manualBtn").addEventListener("click", () => validate($("manualInput").value));
-  $("manualInput").addEventListener("keydown", e => {
-    if(e.key === "Enter") validate(e.target.value);
-  });
+  throw lastError;
 
-  $("nextBtn").addEventListener("click", () => {
-    $("statusBox").className = "status";
-    $("manualInput").value = "";
-    startScanner();
-  });
+}
 
-  $("saveSettings").addEventListener("click", () => {
-    localStorage.setItem("pahin_endpoint", endpoint.value.trim());
-    showStatus("success","CONFIGURATION ENREGISTRÉE","L'URL Supabase a été mémorisée sur cet appareil.",null);
-  });
+function cameraErrorMessage(err){
+
+  const name =
+    err && err.name;
+
+  if(
+    name === 'NotAllowedError' ||
+    name === 'PermissionDeniedError'
+  ){
+
+    return "Accès caméra refusé. Autorisez la caméra dans Réglages > Safari > Caméra, puis rechargez la page.";
+
+  }
+
+  if(
+    name === 'NotFoundError' ||
+    name === 'DevicesNotFoundError'
+  ){
+
+    return "Aucune caméra n'a été trouvée sur cet appareil.";
+
+  }
+
+  if(
+    name === 'NotReadableError' ||
+    name === 'TrackStartError'
+  ){
+
+    return "La caméra est déjà utilisée par une autre application. Fermez les autres apps caméra puis réessayez.";
+
+  }
+
+  if(
+    name === 'OverconstrainedError' ||
+    name === 'ConstraintNotSatisfiedError'
+  ){
+
+    return "La caméra arrière n'a pas pu être configurée. Réessayez, ou redémarrez Safari.";
+
+  }
+
+  if(
+    name === 'SecurityError'
+  ){
+
+    return "L'accès à la caméra a été bloqué par le navigateur (page non sécurisée).";
+
+  }
+
+  return "Impossible de démarrer la caméra sur cet appareil.";
+
+}
+
+async function startScanner(){
+
+  if(
+    scanning ||
+    processing
+  ){
+
+    return;
+
+  }
+
+  clearStatus();
+
+  if(!window.isSecureContext){
+
+    showStatus(
+      'warning',
+      'HTTPS REQUIS',
+      'La caméra nécessite une page HTTPS. Utilisez le lien GitHub Pages du scanner.',
+      null
+    );
+
+    return;
+
+  }
+
+  if(
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ){
+
+    showStatus(
+      'warning',
+      'CAMÉRA NON COMPATIBLE',
+      "Ce navigateur ne permet pas l'accès à la caméra.",
+      null
+    );
+
+    return;
+
+  }
+
+  if(typeof jsQR !== 'function'){
+
+    showStatus(
+      'warning',
+      'LECTEUR QR NON DISPONIBLE',
+      'La bibliothèque QR n’a pas été chargée. Vérifiez votre connexion Internet.',
+      null
+    );
+
+    return;
+
+  }
+
+  $('startBtn').disabled =
+    true;
+
+  $('cameraHint').textContent =
+    "Demande d’accès à la caméra…";
+
+  tapPlayBtn.classList.add(
+    'hidden'
+  );
+
+  try{
+
+    stream =
+      await acquireCameraStream();
+
+    video.srcObject =
+      stream;
+
+    video.muted =
+      true;
+
+    video.setAttribute(
+      'muted',
+      ''
+    );
+
+    video.classList.remove(
+      'hidden'
+    );
+
+    $('scanFrame')
+      .classList.remove(
+        'hidden'
+      );
+
+    try{
+
+      await video.play();
+
+    }catch(playErr){
+
+      console.warn(
+        'Lecture vidéo bloquée, affichage du filet de sécurité :',
+        playErr
+      );
+
+      tapPlayBtn.classList.remove(
+        'hidden'
+      );
+
+      $('cameraHint').textContent =
+        'Appuyez sur le bouton pour activer la vidéo';
+
+      $('startBtn').disabled =
+        false;
+
+      $('startBtn').textContent =
+        'Caméra active';
+
+      return;
+
+    }
+
+    scanning = true;
+
+    $('startBtn').textContent =
+      'Caméra active';
+
+    $('cameraHint').textContent =
+      'Placez le QR dans le cadre';
+
+    lastFrameAt = 0;
+
+    scanFrame();
+
+  }catch(err){
+
+    console.error(
+      'Erreur caméra:',
+      err
+    );
+
+    await stopScanner();
+
+    showStatus(
+      'warning',
+      'CAMÉRA NON DISPONIBLE',
+      cameraErrorMessage(err),
+      null
+    );
+
+  }
+
+}
+
+tapPlayBtn.addEventListener(
+  'click',
+  async ()=>{
+
+    try{
+
+      await video.play();
+
+      tapPlayBtn.classList.add(
+        'hidden'
+      );
+
+      scanning = true;
+
+      $('cameraHint').textContent =
+        'Placez le QR dans le cadre';
+
+      lastFrameAt = 0;
+
+      scanFrame();
+
+    }catch(err){
+
+      console.error(
+        'Échec de lecture vidéo après interaction :',
+        err
+      );
+
+      showStatus(
+        'warning',
+        'LECTURE VIDÉO IMPOSSIBLE',
+        "Impossible d'afficher le flux caméra sur cet appareil. Réessayez ou redémarrez Safari.",
+        null
+      );
+
+    }
+
+  }
+);
+
+function scanFrame(timestamp){
+
+  if(!scanning){
+    return;
+  }
+
+  if(processing){
+
+    animationId =
+      requestAnimationFrame(
+        scanFrame
+      );
+
+    return;
+
+  }
+
+  if(
+    video.readyState < 2 ||
+    !video.videoWidth ||
+    !video.videoHeight
+  ){
+
+    animationId =
+      requestAnimationFrame(
+        scanFrame
+      );
+
+    return;
+
+  }
+
+  const now =
+    timestamp ||
+    performance.now();
+
+  if(
+    now - lastFrameAt <
+    SCAN_INTERVAL_MS
+  ){
+
+    animationId =
+      requestAnimationFrame(
+        scanFrame
+      );
+
+    return;
+
+  }
+
+  lastFrameAt =
+    now;
+
+  const scale =
+    Math.min(
+      1,
+      900 / video.videoWidth
+    );
+
+  const w =
+    Math.floor(
+      video.videoWidth * scale
+    );
+
+  const h =
+    Math.floor(
+      video.videoHeight * scale
+    );
+
+  canvas.width =
+    w;
+
+  canvas.height =
+    h;
+
+  ctx.drawImage(
+    video,
+    0,
+    0,
+    w,
+    h
+  );
+
+  let code = null;
+
+  try{
+
+    const image =
+      ctx.getImageData(
+        0,
+        0,
+        w,
+        h
+      );
+
+    code =
+      jsQR(
+        image.data,
+        image.width,
+        image.height,
+        {
+          inversionAttempts:
+            'attemptBoth'
+        }
+      );
+
+  }catch(e){
+
+    console.error(
+      'Erreur de décodage QR :',
+      e
+    );
+
+  }
+
+  if(
+    code &&
+    code.data
+  ){
+
+    const t =
+      Date.now();
+
+    if(
+      code.data !== lastDecoded ||
+      t - lastDecodedAt >=
+      SAME_CODE_COOLDOWN_MS
+    ){
+
+      lastDecoded =
+        code.data;
+
+      lastDecodedAt =
+        t;
+
+      validate(
+        code.data
+      );
+
+    }
+
+  }
+
+  animationId =
+    requestAnimationFrame(
+      scanFrame
+    );
+
+}
+
+async function stopScanner(){
+
+  scanning = false;
+
+  if(animationId){
+
+    cancelAnimationFrame(
+      animationId
+    );
+
+    animationId =
+      null;
+
+  }
+
+  if(stream){
+
+    stream
+      .getTracks()
+      .forEach(
+        t => {
+          try{
+            t.stop();
+          }catch(e){}
+        }
+      );
+
+    stream = null;
+
+  }
+
+  video.pause();
+
+  video.srcObject =
+    null;
+
+  video.classList.add(
+    'hidden'
+  );
+
+  tapPlayBtn.classList.add(
+    'hidden'
+  );
+
+  $('scanFrame')
+    .classList.add(
+      'hidden'
+    );
+
+  $('startBtn').disabled =
+    false;
+
+  $('startBtn').textContent =
+    'Démarrer la caméra';
+
+  $('cameraHint').textContent =
+    'Appuyez sur « Démarrer la caméra »';
+
+}
+
+$('startBtn').addEventListener(
+  'click',
+  startScanner
+);
+
+$('stopBtn').addEventListener(
+  'click',
+  stopScanner
+);
+
+$('manualBtn').addEventListener(
+  'click',
+  () =>
+    validate(
+      $('manualInput').value
+    )
+);
+
+$('manualInput').addEventListener(
+  'keydown',
+  e => {
+
+    if(e.key === 'Enter'){
+
+      e.preventDefault();
+
+      validate(
+        e.target.value
+      );
+
+    }
+
+  }
+);
+
+$('nextBtn').addEventListener(
+  'click',
+  async ()=>{
+
+    clearStatus();
+
+    $('manualInput').value =
+      '';
+
+    lastDecoded =
+      '';
+
+    lastDecodedAt =
+      0;
+
+    await startScanner();
+
+  }
+);
+
+$('saveSettings').addEventListener(
+  'click',
+  ()=>{
+
+    const v =
+      endpoint.value.trim();
+
+    if(!v){
+
+      showStatus(
+        'warning',
+        'URL MANQUANTE',
+        'Veuillez renseigner l’URL de la fonction Supabase.',
+        null
+      );
+
+      return;
+
+    }
+
+    localStorage.setItem(
+      'pahin_endpoint',
+      v
+    );
+
+    showStatus(
+      'success',
+      'CONFIGURATION ENREGISTRÉE',
+      'L’URL Supabase a été mémorisée sur cet appareil.',
+      null
+    );
+
+  }
+);
+
+window.addEventListener(
+  'pagehide',
+  ()=>{
+
+    if(stream){
+
+      stream
+        .getTracks()
+        .forEach(
+          t => {
+            try{
+              t.stop();
+            }catch(e){}
+          }
+        );
+
+    }
+
+  }
+);
+
+document.addEventListener(
+  'visibilitychange',
+  ()=>{
+
+    if(
+      document.visibilityState ===
+      'hidden' &&
+      scanning
+    ){
+      // La boucle reprend au retour.
+    }
+
+  }
+);
+
 })();
 </script>
+
 </body>
 </html>
