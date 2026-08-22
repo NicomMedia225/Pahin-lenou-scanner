@@ -311,48 +311,80 @@
     }
   }
 
-  async function startScanner(){
-    if(scanning) return;
-    if(typeof Html5Qrcode === "undefined"){
-      showStatus("warning","SCANNER NON DISPONIBLE","La bibliothèque QR n'a pas encore été chargée. Vérifiez la connexion Internet.",null);
-      return;
-    }
+  async function startScanner() {
+  if (scanning) return;
 
-    scanner = new Html5Qrcode("reader");
-    const config = {
-      fps: 10,
-      qrbox: (w,h) => {
-        const size = Math.floor(Math.min(w,h) * 0.72);
-        return {width:size,height:size};
-      },
-      aspectRatio: 1.0
-    };
-
-    try{
-      await scanner.start(
-        { facingMode: "environment" },
-        config,
-        decodedText => {
-          const now = Date.now();
-          if(decodedText === lastDecoded && now - lastDecodedAt < 2500) return;
-          lastDecoded = decodedText;
-          lastDecodedAt = now;
-          validate(decodedText);
-        },
-        () => {}
-      );
-      scanning = true;
-      $("startBtn").textContent = "Caméra active";
-      $("startBtn").disabled = true;
-    }catch(err){
-      showStatus(
-        "warning",
-        "CAMÉRA NON DISPONIBLE",
-        "Autorisez l'accès à la caméra. Sur iPhone, utilisez de préférence une page HTTPS plutôt qu'un fichier local.",
-        null
-      );
-    }
+  if (typeof Html5Qrcode === "undefined") {
+    showStatus(
+      "warning",
+      "SCANNER NON DISPONIBLE",
+      "La bibliothèque QR n'a pas été chargée."
+    );
+    return;
   }
+
+  scanner = new Html5Qrcode("reader");
+
+  const config = {
+    fps: 10,
+    qrbox: (w, h) => {
+      const size = Math.floor(Math.min(w, h) * 0.72);
+      return { width: size, height: size };
+    },
+    aspectRatio: 1.0
+  };
+
+  try {
+    const cameras = await Html5Qrcode.getCameras();
+
+    if (!cameras || cameras.length === 0) {
+      throw new Error("Aucune caméra disponible.");
+    }
+
+    // Cherche en priorité la caméra arrière
+    const rearCamera =
+      cameras.find(camera =>
+        /back|rear|environment|arrière/i.test(camera.label)
+      ) || cameras[cameras.length - 1];
+
+    await scanner.start(
+      rearCamera.id,
+      config,
+      decodedText => {
+        const now = Date.now();
+
+        if (
+          decodedText === lastDecoded &&
+          now - lastDecodedAt < 2500
+        ) {
+          return;
+        }
+
+        lastDecoded = decodedText;
+        lastDecodedAt = now;
+
+        validate(decodedText);
+      },
+      () => {}
+    );
+
+    scanning = true;
+    $("startBtn").textContent = "Caméra active";
+    $("startBtn").disabled = true;
+
+  } catch (err) {
+    console.error("Erreur caméra :", err);
+
+    showStatus(
+      "warning",
+      "CAMÉRA NON DISPONIBLE",
+      "Impossible de démarrer la caméra : " +
+        (err?.message || "erreur inconnue")
+    );
+
+    scanning = false;
+  }
+}
 
   async function stopScanner(){
     if(!scanner || !scanning) return;
