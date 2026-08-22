@@ -255,22 +255,14 @@
   async function validate(raw){
     if(processing) return;
     const token = extractToken(raw);
-    if(!token) return;
-
-    processing = true;
-    stopScanner();
-
-    try{
-      const base = endpoint.value.trim().replace(/\/+$/,"");
-      if(!base) throw new Error("URL Supabase manquante.");
-
-      const url = base + "?token=" + encodeURIComponent(token);
-      const response = await fetch(url, {
-    method: "GET",
-    headers: {
-        "Accept": "application/json",
-        "apikey": "sb_publishable_vTLl_AeDz-eFqp3GOPVq6Q_KZJ62Ey_",
-    }
+    const response = await fetch(base, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    token: token
+  })
 });
 
       let data = {};
